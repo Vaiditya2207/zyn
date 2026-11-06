@@ -11,7 +11,7 @@
     "build:ui": "bash scripts/zyn-build.sh --ui",
     "start": "cd engine && python3 ./mach run --noprofile",
     "start:bloat": "XPCOM_MEM_BLOAT_LOG=1 npm start",
-    "import": "node scripts/zyn-surfer.cjs prepare && npm run ffprefs && npm run import:dumps && node scripts/zyn-surfer.cjs import",
+    "import": "node scripts/zyn-surfer.cjs prepare && npm run ffprefs && npm run import:dumps && node scripts/zyn-surfer.cjs import && python3 scripts/copy_language_pack.py en-US",
     "import:dumps": "python3 scripts/update_service_dumps.py",
     "export": "surfer export",
     "init": "npm run download && npm run import && npm run bootstrap",
