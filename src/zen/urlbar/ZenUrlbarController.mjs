@@ -17,6 +17,7 @@ export class nsZenUrlbarController {
   #lastTab = null;
   #sessionCounter = 0;
   #owner = null;
+  #newTabOpenFrame = null;
 
   // Search mode animation.
   #animatingSearchMode = false;
@@ -182,15 +183,33 @@ export class nsZenUrlbarController {
    * work waits until the new tab is selected.
    */
   #openOnNextNewTab() {
+    // Several Cmd+T events can arrive before a paint. Only the latest selected
+    // new tab needs focus and a results query.
+    if (this.#newTabOpenFrame !== null) {
+      cancelAnimationFrame(this.#newTabOpenFrame);
+    }
     const opener = gBrowser.selectedTab;
-    requestAnimationFrame(() => {
+    this.#newTabOpenFrame = requestAnimationFrame(() => {
+      this.#newTabOpenFrame = null;
       const tab = gBrowser.selectedTab;
-      if (!tab || tab === opener || tab.closing || window.closed) {
+      if (
+        !tab ||
+        tab === opener ||
+        tab.closing ||
+        window.closed ||
+        !this.openOnNewTabPage ||
+        gURLBar.hasAttribute("usertyping")
+      ) {
+        // Input may already have started its own query. Do not select that
+        // text or restart its providers when this deferred callback runs.
         return;
       }
       try {
-        gURLBar.focus();
-        gURLBar.select();
+        // Firefox normally focuses the address bar while selecting a new tab.
+        if (!gURLBar.focused) {
+          gURLBar.focus();
+          gURLBar.select();
+        }
         // A "command" event makes the view open for an empty input, the same
         // way it does when the URL bar is opened from the toolbar.
         gURLBar.view.autoOpen({ event: new CustomEvent("command") });
