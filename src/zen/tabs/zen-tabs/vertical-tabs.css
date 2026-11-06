@@ -963,7 +963,7 @@ zen-library {
 
 .tabbrowser-tab > .tab-stack > .tab-content > :is(.tab-close-button, .tab-reset-button) {
   --zen-tab-button-line-rotation: 45deg;
-  --zen-tab-button-line-length: 15px;
+  --zen-tab-button-line-scale: 1;
   position: relative;
 
   &::before,
@@ -972,16 +972,21 @@ zen-library {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: var(--zen-tab-button-line-length);
+    /* Keep geometry fixed while the 12px/15px glyph changes length. */
+    width: 15px;
     height: 1.5px;
     border-radius: 1px;
     background: currentColor;
     translate: -50% -50%;
     rotate: var(--zen-tab-button-line-rotation);
+    scale: var(--zen-tab-button-line-scale) 1;
     transition:
       rotate 0.12s ease,
-      width 0.12s ease;
-    will-change: transform;
+      scale 0.12s ease;
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
   }
 
   &::after {
@@ -991,11 +996,11 @@ zen-library {
 
 .tabbrowser-tab > .tab-stack > .tab-content > .tab-reset-button {
   --zen-tab-button-line-rotation: 0deg;
-  --zen-tab-button-line-length: 12px;
+  --zen-tab-button-line-scale: 0.8;
 
   @media (-moz-pref("zen.pinned-tab-manager.close-shortcut-behavior", "close")) {
     --zen-tab-button-line-rotation: 45deg;
-    --zen-tab-button-line-length: 15px;
+    --zen-tab-button-line-scale: 1;
   }
 }
 
@@ -1003,17 +1008,17 @@ zen-library {
   .tabbrowser-tab > .tab-stack > .tab-content > .tab-close-button::before,
   .tabbrowser-tab > .tab-stack > .tab-content > .tab-close-button::after {
     rotate: 0deg;
-    width: 12px;
+    scale: 0.8 1;
   }
 
   .tabbrowser-tab > .tab-stack > .tab-content > .tab-reset-button::before {
     rotate: 45deg;
-    width: 15px;
+    scale: 1 1;
   }
 
   .tabbrowser-tab > .tab-stack > .tab-content > .tab-reset-button::after {
     rotate: -45deg;
-    width: 15px;
+    scale: 1 1;
   }
 }
 
