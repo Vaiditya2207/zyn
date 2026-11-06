@@ -43,3 +43,5 @@ zen-action-print = Print
 zen-action-focus-on = Focus on
 zen-action-extension = Extension
 zen-action-open = Open
+
+zyn-action-unload-idle-tabs = Unload idle tabs in this window
