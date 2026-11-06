@@ -18,7 +18,20 @@ const CONFIG = Object.freeze({
 
 class nsZenDownloadAnimation extends nsZenDOMOperatedFeature {
   async init() {
-    await this.#setupDownloadListeners();
+    // This decorative view must not pull download history into window startup.
+    // Keep download handling itself available through Firefox's normal UI.
+    await gZenStartup.promiseInitialized;
+    if (window.closed) {
+      return;
+    }
+    window.requestIdleCallback(
+      () => {
+        if (!window.closed) {
+          this.#setupDownloadListeners();
+        }
+      },
+      { timeout: 1000 }
+    );
   }
 
   async #setupDownloadListeners() {
