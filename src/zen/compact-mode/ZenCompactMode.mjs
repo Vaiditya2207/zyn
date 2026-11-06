@@ -734,8 +734,8 @@ window.gZenCompactModeManager = {
       }
     });
 
-    for (let i = 0; i < this.hoverableElements.length; i++) {
-      let target = this.hoverableElements[i].element;
+    // Bind from one snapshot; the getter allocates a list and reads prefs.
+    for (const [i, { element: target }] of this.hoverableElements.entries()) {
       let pendingEnter = null;
       let isHovering = false;
 
@@ -833,14 +833,16 @@ window.gZenCompactModeManager = {
             return;
           }
 
+          // Read once per event, keeping changes to the preference live.
+          const { keepHoverDuration } = this.hoverableElements[i];
           if (
-            this.hoverableElements[i].keepHoverDuration &&
+            keepHoverDuration &&
             !this._hasHoveredUrlbar &&
             target.hasAttribute("zen-has-hover")
           ) {
             this.flashElement(
               target,
-              this.hoverableElements[i].keepHoverDuration,
+              keepHoverDuration,
               "has-hover" + target.id,
               "zen-has-hover"
             );
