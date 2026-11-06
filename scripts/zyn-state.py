@@ -9,6 +9,7 @@ import plistlib
 import re
 import subprocess
 import sys
+import zipfile
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -102,6 +103,26 @@ def verify_import():
             raise SystemExit(f'Missing/stale imported overlay: {dest}')
     if not (engine / 'browser/app/profile/zen.js').is_file():
         raise SystemExit('Missing generated Zen preferences')
+    if not (engine / 'browser/locales/en-US/browser/zen-general.ftl').is_file():
+        raise SystemExit('Missing Zen translations; run python3 scripts/copy_language_pack.py en-US')
+
+
+def zen_translations():
+    """Zen's own en-US Fluent files, as they must appear in browser/omni.ja."""
+    base = ROOT / 'locales/en-US/browser/browser'
+    return sorted('localization/en-US/browser/' + p.relative_to(base).as_posix()
+                  for p in base.rglob('*.ftl'))
+
+
+def check_zen_translations(omni):
+    """Fail if any Zen Fluent file is missing. Fluent drops the whole en-US
+    bundle when one linked file is missing, which removes every <key> letter
+    (Cmd+T, Cmd+W, ...) and many labels."""
+    with zipfile.ZipFile(omni) as z:
+        names = set(z.namelist())
+    missing = [n for n in zen_translations() if n not in names]
+    if missing:
+        raise SystemExit(f'Package is missing Zen translations: {", ".join(missing)}')
 
 
 def verify_app(folder):
@@ -116,6 +137,7 @@ def verify_app(folder):
         if plist.get(key) != value:
             raise SystemExit(f'Wrong bundle identity {key}: {plist.get(key)}')
     check_ini(app / 'Contents/Resources/application.ini')
+    check_zen_translations(app / 'Contents/Resources/browser/omni.ja')
     if plist.get('CFBundleShortVersionString') != version():
         raise SystemExit('Wrong bundle version')
     built = configparser.ConfigParser(interpolation=None)
