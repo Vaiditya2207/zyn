@@ -47,6 +47,7 @@ with tempfile.TemporaryDirectory(prefix="zyn-prefs-", dir=TARGET) as directory:
         "browser.lowMemoryResponseMask": 3,
         "browser.lowMemoryResponseOnWarn": True,
         "network.http.http2.coalesce-hostnames": False,
+        "network.predictor.enable-hover-on-ssl": True,
         "xpinstall.signatures.required": False,
         "datareporting.usage.uploadEnabled": False,
         "nimbus.rollouts.enabled": False,

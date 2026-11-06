@@ -106,6 +106,10 @@
   value: true
 - name: network.http.http2.coalesce-hostnames
   value: false
+# Use Firefox's bounded speculative-connect path for hovered links on HTTPS
+# pages too. This opens a connection, not a document prefetch or history scan.
+- name: network.predictor.enable-hover-on-ssl
+  value: true
 - name: toolkit.legacyUserProfileCustomizations.stylesheets
   value: true
 - name: xpinstall.signatures.required
