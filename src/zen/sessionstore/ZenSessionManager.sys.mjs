@@ -108,11 +108,30 @@ export class nsZenSessionManager {
       path: this.#storeFilePath,
       compression: "lz4",
       backupTo,
+      // Coalesce same-turn changes without adding a session-save interval.
+      saveDelayMs: 0,
+      beforeSave: async () => {
+        const cleanPath = PathUtils.join(
+          this.#backupFolderPath,
+          "clean.jsonlz4"
+        );
+        try {
+          await IOUtils.copy(this.#storeFilePath, cleanPath, {
+            recursive: true,
+          });
+        } catch {
+          // A missing/unavailable clean backup must not prevent the main save.
+        }
+      },
       useSizeHints: Services.prefs.getBoolPref(
         "zen.session-store.use-size-hints",
         true
       ),
     });
+    // JSONFile does not expose an idle timeout option. Its DeferredTask defaults
+    // to an unbounded idle wait, which is unsuitable for crash recovery. Keep
+    // its serialization and shutdown finalizer, but dispatch on the next tick.
+    this.#file._saver._idleTimeoutMs = 0;
     this.log("Session file path:", this.#file.path);
     this.#deferredBackupTask = new lazy.DeferredTask(async () => {
       await this.#createBackupsIfNeeded();
@@ -593,9 +612,9 @@ export class nsZenSessionManager {
    * Saves the current session state. Collects data and writes to disk.
    *
    * @param {object} state The current session state.
-   * @param {boolean} soon Whether to save the file soon or immediately.
-   *        If true, the file will be saved asynchronously or when quitting
-   *        the app. If false, the file will be saved immediately.
+   * @param {boolean} soon Whether live-folder persistence may be delayed.
+   *        Sidebar writes always run on the next event-loop tick (or after an
+   *        in-flight write), and JSONFile flushes pending data during shutdown.
    */
   saveState(state, soon = false) {
     let windows = state?.windows || [];
@@ -605,13 +624,6 @@ export class nsZenSessionManager {
       // browsing mode. We also don't want to save if there are no windows.
       return;
     }
-    const cleanPath = PathUtils.join(this.#backupFolderPath, "clean.jsonlz4");
-    IOUtils.copy(this.#storeFilePath, cleanPath, { recursive: true }).catch(
-      () => {
-        /* ignore errors creating clean backup, as it is not critical and
-         * we want to save the session even if we fail to create it */
-      }
-    );
     this.#collectWindowData(windows);
     // Let interested consumers (e.g. Firefox Sync) know fresh sidebar data
     // is available, without this module knowing anything about them.
@@ -619,11 +631,7 @@ export class nsZenSessionManager {
     // This would save the data to disk asynchronously or when quitting the app.
     let sidebar = this.#sidebarWithoutCloning;
     this.#file.data = sidebar;
-    if (soon) {
-      this.#file.saveSoon();
-    } else {
-      this.#file._save();
-    }
+    this.#file.saveSoon();
     lazy.ZenLiveFoldersManager.saveState(soon);
     this.#debounceRegeneration();
     this.log(`Saving Zen session data with ${sidebar.tabs?.length || 0} tabs`);
@@ -829,7 +837,11 @@ export class nsZenSessionManager {
    * @param {object} aStateWindows The array of window state objects.
    */
   #collectTabsData(sidebarData, aStateWindows) {
-    sidebarData.tabs = this.#collectUsedTabsFromWindows(aStateWindows);
+    // SessionWriter replaces entries/index on these records during shutdown.
+    // Keep our queued snapshot independent without cloning the history tree.
+    sidebarData.tabs = this.#collectUsedTabsFromWindows(aStateWindows).map(
+      tab => ({ ...tab })
+    );
 
     let firstWindow = aStateWindows[0];
     sidebarData.folders = firstWindow.folders;
