@@ -67,6 +67,7 @@ const ZEN_KEY_CATEGORIES = [
   {
     l10nId: "zenCKSOption-group-zen-other",
     keys: [
+      ["zyn-unload-idle-tabs-shortcut", "zyn-unload-idle-tabs-shortcut"],
       ["zen-toggle-sidebar", "zen-sidebar-shortcut-toggle"],
       ["zen-library-toggle", "zen-library-shortcut-toggle"],
       ["zen-glance-expand", "zen-glance-expand"],

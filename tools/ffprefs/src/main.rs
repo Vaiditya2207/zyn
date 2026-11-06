@@ -153,18 +153,36 @@ fn get_prefs_files_recursively(dir: &PathBuf, files: &mut Vec<PathBuf>) {
     }
 }
 
-fn load_preferences() -> Vec<Preference> {
+fn load_preferences_from(config_path: &PathBuf) -> Vec<Preference> {
     let mut prefs = Vec::new();
-    let config_path = get_config_path();
+    let personal_path = config_path.join("zen/zyn.yaml");
     let mut pref_files = Vec::new();
-    get_prefs_files_recursively(&config_path, &mut pref_files);
+    get_prefs_files_recursively(config_path, &mut pref_files);
+    // Give the personal overlay explicit priority, independent of filesystem
+    // enumeration order. Preserve upstream ordering for all other files.
     for file_path in pref_files {
+        if file_path == personal_path {
+            continue;
+        }
         let content = fs::read_to_string(&file_path).expect("Failed to read file");
         let mut parsed_prefs: Vec<Preference> =
             serde_yaml::from_str(&content).expect("Failed to parse YAML");
         prefs.append(&mut parsed_prefs);
     }
-    ordered_prefs(prefs)
+    let mut prefs = ordered_prefs(prefs);
+    if personal_path.exists() {
+        let content = fs::read_to_string(personal_path).expect("Failed to read personal prefs");
+        let personal: Vec<Preference> =
+            serde_yaml::from_str(&content).expect("Failed to parse personal prefs");
+        // Keep upstream C++ static declarations intact. Dynamic defaults are
+        // emitted later, so they also override the default of a static pref.
+        assert!(
+            personal.iter().all(|p| p.r#type.is_none()),
+            "Personal prefs must be dynamic defaults"
+        );
+        prefs.extend(personal);
+    }
+    prefs
 }
 
 fn get_condition_string(condition: &Option<String>) -> String {
@@ -370,7 +388,43 @@ fn main() {
     env::set_current_dir(&root_path).expect("Failed to change directory");
 
     prepare_zen_prefs();
-    let mut preferences = load_preferences();
+    let mut preferences = load_preferences_from(&get_config_path());
     expand_pref_values(&mut preferences);
     write_preferences(&preferences);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn personal_defaults_follow_upstream_without_changing_static_declarations() {
+        let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("target")
+            .join("zyn-pref-order-test");
+        fs::create_dir_all(root.join("zen")).unwrap();
+        fs::write(root.join("zen/theme.yaml"),
+            "- name: zen.theme.acrylic-sidebar\n  value: false\n  type: static\n  cpptype: bool\n  mirror: once\n").unwrap();
+        fs::write(root.join("zen/zyn.yaml"),
+            "- name: zen.theme.acrylic-sidebar\n  value: true\n").unwrap();
+        // This sorts after zyn.yaml; file names alone must not decide priority.
+        fs::write(root.join("zzz.yaml"),
+            "- name: zen.theme.acrylic-sidebar\n  value: false\n").unwrap();
+        let prefs = load_preferences_from(&root);
+        assert_eq!(prefs.last().unwrap().value, "true");
+        let statics: Vec<_> = prefs
+            .iter()
+            .filter(|p| p.r#type.as_deref() == Some("static"))
+            .collect();
+        assert_eq!(statics.len(), 1);
+        assert_eq!(statics[0].value, "false");
+        // All YAML (including personal-only keys) is parsed by the actual generator.
+        let real = load_preferences_from(
+            &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../prefs"),
+        );
+        assert!(real
+            .iter()
+            .any(|p| p.name == "zyn.tabs.auto-unload-idle" && p.value == "false"));
+        fs::remove_dir_all(root).unwrap();
+    }
 }

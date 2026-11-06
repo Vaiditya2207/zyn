@@ -35,6 +35,11 @@ function isNotEmptyTab(window) {
 
 const globalActionsTemplate = [
   {
+    l10nId: "zyn-action-unload-idle-tabs",
+    command: "cmd_zynUnloadIdleTabs",
+    icon: "chrome://browser/skin/zen-icons/sidebar.svg",
+  },
+  {
     l10nId: "zen-action-toggle-compact-mode",
     command: "cmd_zenCompactModeToggle",
     icon: "chrome://browser/skin/zen-icons/sidebar.svg",
