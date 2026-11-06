@@ -24,8 +24,13 @@ upstream preference is already locked. The repeated locked privacy settings
 have the same value and keep their locks (`Preferences.cpp`,
 `Pref::SetDefaultValue`). Profile user values still override unlocked defaults.
 Removing an old override from user.js alone does not reset prefs.js. This change
-neither reads nor migrates the live profile. The task's older snapshot was read;
-no separate current tuning file was supplied to this worker.
+neither reads nor migrates the live profile. The older snapshot and the
+subsequently supplied `user.current.js` were both compared. The current file restores cache/media/connection settings to Firefox
+defaults and adds low-memory mask=3, warning response=true, Nimbus rollouts=false
+and usage upload=false. Those choices already match this implementation: the
+first group is inherited from Firefox and the four added gates are in the overlay.
+No shared current-profile/overlay preference conflicts were found. The remaining
+profile-only tweaks were not broadened into the explicitly requested build defaults.
 
 Static declarations (including acrylic's `mirror: once`) are left unchanged.
 The integration check proves the generated static include is byte-for-byte the
