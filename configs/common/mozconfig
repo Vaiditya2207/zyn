@@ -102,3 +102,8 @@ ac_add_options MOZ_TELEMETRY_REPORTING=
 # Allow loading unsigned extensions
 export MOZ_REQUIRE_SIGNING=
 mk_add_options MOZ_REQUIRE_SIGNING=
+
+# Personal fork settings; upstream release automation remains separate.
+if test "${ZYN_BUILD:-0}" = 1 || test "${ZYN_RELEASE:-0}" = 1 || test "${ZEN_PERSONAL_BUILD:-0}" = 1; then
+  . "${topsrcdir}/../configs/zyn/mozconfig"
+fi
