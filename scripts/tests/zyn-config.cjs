@@ -1,0 +1,22 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const root = process.cwd();
+// Generate only into a private fixture. Never configure/build the supplied engine.
+const surfer = process.env.ZYN_TEST_SURFER || path.dirname(require.resolve('@zen-browser/surfer/package.json'));
+fs.mkdirSync(path.join(root, '.surfer/validation'), {recursive:true});
+const fixture = fs.mkdtempSync(path.join(root, '.surfer/validation/config-'));
+fs.cpSync(path.join(root, 'configs'), path.join(fixture, 'configs'), {recursive: true});
+fs.mkdirSync(path.join(fixture,'engine/browser/config'), {recursive:true});
+fs.mkdirSync(path.join(fixture,'engine/browser/branding/zyn'), {recursive:true});
+const config = require(path.join(root,'scripts/zyn-brand.cjs'))(JSON.parse(fs.readFileSync('surfer.json')));
+fs.writeFileSync(path.join(fixture,'surfer.json'), JSON.stringify(config));
+process.chdir(fixture);
+process.surferPlatform = 'darwin';
+const index = path.join(surfer, 'dist/index.js');
+require.cache[index] = {id:index,filename:index,loaded:true,exports:{config,bin_name:'surfer'}};
+const dynamic = require(path.join(surfer,'dist/utils/dynamic-config.js'));
+dynamic.set('brand','zyn');
+dynamic.set('buildMode',process.env.ZYN_RELEASE === '1' ? 'release' : 'dev');
+process.env.SURFER_MOZCONFIG_ONLY='1';
+console.log('FIXTURE='+fixture);
+require(path.join(surfer,'dist/commands/build.js')).build({skipPatchCheck:true});

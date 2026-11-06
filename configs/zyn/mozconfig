@@ -1,0 +1,56 @@
+# Personal native Apple Silicon configuration. Sourced by common/mozconfig.
+# Keep the basename Zen: it also names the existing OSKeyStore Keychain label.
+ac_add_options --disable-updater
+
+if test "${ZYN_BUILD:-0}" = 1 || test "${ZYN_RELEASE:-0}" = 1; then
+  ac_add_options --with-distribution-id=app.zyn
+  export MOZ_APP_REMOTINGNAME=zyn
+  export MOZ_PKG_FORMAT=TAR
+  mk_add_options MOZ_MAKE_FLAGS="-j4"
+  # One object tree per lane; never silently reuse the unofficial/dev objects.
+  if test "${ZYN_RELEASE:-0}" = 1; then
+    if test "${ZYN_PGO:-0}" = 1; then
+      mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-zyn-pgo
+    else
+      mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-zyn-release
+    fi
+  else
+    mk_add_options MOZ_OBJDIR=@TOPSRCDIR@/obj-zyn-dev
+  fi
+fi
+
+if test "${ZYN_RELEASE:-0}" = 1; then
+  test -z "${ZEN_RELEASE:-}" || { echo 'Use ZYN_RELEASE without ZEN_RELEASE' >&2; exit 1; }
+  test "$(uname -m)" = arm64 || { echo 'Zyn release requires Apple Silicon' >&2; exit 1; }
+  ac_add_options --enable-release
+  ac_add_options --enable-optimize
+  ac_add_options --disable-debug
+  ac_add_options --disable-debug-symbols
+  ac_add_options --disable-debug-js-modules
+  ac_add_options --disable-tests
+  ac_add_options --disable-crashreporter
+  ac_add_options --disable-geckodriver
+  ac_add_options --disable-rust-tests
+  ac_add_options --enable-rust-simd
+  export MOZ_LTO=cross,thin
+  ac_add_options --enable-lto=cross,thin
+  ac_add_options --enable-linker=lld
+  ac_add_options --with-macos-sdk=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk
+  export CC="$HOME/.mozbuild/clang/bin/clang"
+  export CXX="$HOME/.mozbuild/clang/bin/clang++"
+  export RUSTC="$HOME/.rustup/toolchains/1.95.0-aarch64-apple-darwin/bin/rustc"
+  export CARGO="$HOME/.rustup/toolchains/1.95.0-aarch64-apple-darwin/bin/cargo"
+  # Both pinned compilers accept apple-m5; native currently detects apple-m4.
+  export CFLAGS="${CFLAGS:-} -mcpu=apple-m5"
+  export CXXFLAGS="${CXXFLAGS:-} -mcpu=apple-m5"
+  export RUSTFLAGS="${RUSTFLAGS:-} -C target-cpu=apple-m5"
+  # Mach -j controls processes, not LLD's hardware-thread default.
+  export LDFLAGS="${LDFLAGS:-} -Wl,--threads=1,--thinlto-jobs=1"
+  export SCCACHE_DIR="$HOME/Library/Caches/zyn-sccache"
+  export SCCACHE_CACHE_SIZE=10G
+  ac_add_options --with-ccache="$HOME/.mozbuild/sccache/sccache"
+  if test "${ZYN_PGO:-0}" = 1; then
+    # mach orchestrates instrumented build -> profileserver -> profile-use build.
+    ac_add_options MOZ_PGO=1
+  fi
+fi
