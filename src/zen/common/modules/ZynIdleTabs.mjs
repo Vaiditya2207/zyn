@@ -2,7 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/** Personal idle unloading. No tab contents, URLs or history are inspected. */
+/** Personal idle unloading. Only the current URL's scheme/host is used for
+ * session protection; no page contents or history are inspected or retained. */
 export class ZynIdleTabs {
   constructor(win, prefs, webrtcUI) {
     this.window = win;
@@ -78,6 +79,26 @@ export class ZynIdleTabs {
     ) {
       return false;
     }
+    // Silent messaging and development pages can have live sessions without
+    // media, WebRTC or beforeunload signals. Never flush/discard these here.
+    // Parse locally; neither the URL nor its query is retained or logged.
+    try {
+      const url = new URL(browser.currentURI.spec);
+      const host = url.hostname.replace(/\.$/, "");
+      if (
+        !["http:", "https:"].includes(url.protocol) ||
+        host === "web.whatsapp.com" ||
+        host === "localhost" ||
+        host.endsWith(".localhost") ||
+        /^127\.\d+\.\d+\.\d+$/.test(host) ||
+        host === "[::1]"
+      ) {
+        return false;
+      }
+    } catch {
+      // Missing/detached or unparseable locations must not abort the scan.
+      return false;
+    }
     // Match the native TabUnloader's stream AND peer-connection protections.
     if (
       this.webrtcUI.browserHasStreams(browser) ||
@@ -102,9 +123,14 @@ export class ZynIdleTabs {
     let count = 0;
     this.running = true;
     try {
-      // Snapshot membership only; eligibility is always read live, including
-      // after the asynchronous flush. Include inactive Zen workspaces.
-      for (const tab of [...gZenWorkspaces.allStoredTabs]) {
+      // Prefer the least recently used eligible tab, including inactive Zen
+      // workspaces. No process enumeration/memory sampling for this small set.
+      // Recheck live eligibility before and after each asynchronous flush.
+      const now = Date.now();
+      const candidates = [...gZenWorkspaces.allStoredTabs]
+        .filter(tab => this.isEligible(tab, now, idleMs))
+        .sort((a, b) => a.lastAccessed - b.lastAccessed);
+      for (const tab of candidates) {
         if (
           automatic &&
           !this.prefs.getBoolPref("zyn.tabs.auto-unload-idle", false)

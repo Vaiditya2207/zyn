@@ -15,6 +15,7 @@ function fixture() {
     linkedBrowser: {
       isConnected: true,
       isRemoteBrowser: true,
+      currentURI: { spec: "https://example.com/reference" },
       browsingContext: {
         currentWindowGlobal: { hasActivePeerConnections: () => false },
       },
@@ -217,6 +218,108 @@ test("a tab moved to another window during the flush is left alone", async () =>
   f.win.gBrowser.prepareDiscardBrowser = async () => {
     f.tab.ownerGlobal = {};
   };
+  assert.equal(await f.service.unloadIdleTabs(), 0);
+  assert.equal(f.discarded.length, 0);
+});
+
+for (const url of [
+  "https://web.whatsapp.com/",
+  "https://WEB.WHATSAPP.COM./",
+  "http://localhost:8233/",
+  "https://app.localhost:3000/",
+  "http://127.0.0.1:8768/",
+  "http://127.12.34.56/",
+  "http://127.1/",
+  "http://[::1]:3000/",
+  "http://LOCALHOST.:8085/",
+  "about:blank",
+  "moz-extension://extension-id/home.html",
+  "not a URL",
+]) {
+  test(`keeps protected or non-web location loaded: ${url}`, async () => {
+    const f = fixture();
+    f.tab.linkedBrowser.currentURI.spec = url;
+    let flushes = 0;
+    f.win.gBrowser.prepareDiscardBrowser = async () => flushes++;
+    assert.equal(await f.service.unloadIdleTabs(), 0);
+    assert.equal(flushes, 0);
+    assert.equal(f.discarded.length, 0);
+  });
+}
+
+for (const url of [
+  "https://github.com/example/repo/pull/1",
+  "https://web.whatsapp.com.example.org/",
+  "https://localhost.example.org/",
+  "https://example.org/localhost",
+  "https://example.org/?next=http://127.0.0.1/",
+  "https://web.whatsapp.com@example.org/",
+  "https://127.0.0.1.example.org/",
+]) {
+  test(`unloads eligible reference without hostname false positives: ${url}`, async () => {
+    const f = fixture();
+    f.tab.linkedBrowser.currentURI.spec = url;
+    assert.equal(await f.service.unloadIdleTabs(), 1);
+  });
+}
+
+test("missing or inaccessible location fails closed", async () => {
+  const f = fixture();
+  delete f.tab.linkedBrowser.currentURI;
+  assert.equal(await f.service.unloadIdleTabs(), 0);
+  Object.defineProperty(f.tab.linkedBrowser, "currentURI", {
+    get() {
+      throw new Error("browser detached");
+    },
+  });
+  assert.equal(await f.service.unloadIdleTabs(), 0);
+});
+
+for (const url of ["https://web.whatsapp.com/", "http://localhost:3000/"]) {
+  test(`rechecks protected location after session flush: ${url}`, async () => {
+    const f = fixture();
+    f.win.gBrowser.prepareDiscardBrowser = async () => {
+      f.tab.linkedBrowser.currentURI.spec = url;
+    };
+    assert.equal(await f.service.unloadIdleTabs(), 0);
+    assert.equal(f.discarded.length, 0);
+  });
+}
+
+test("automatic scan skips protected sessions and unloads oldest eligible tab first", async () => {
+  const f = fixture();
+  f.prefs.getBoolPref = () => true;
+  const old = { ...f.tab, lastAccessed: Date.now() - 180 * 60000 };
+  const protectedTab = {
+    ...f.tab,
+    lastAccessed: Date.now() - 240 * 60000,
+    linkedBrowser: {
+      ...f.tab.linkedBrowser,
+      currentURI: { spec: "https://web.whatsapp.com/" },
+    },
+  };
+  f.win.gZenWorkspaces.allStoredTabs = [f.tab, protectedTab, old];
+  assert.equal(await f.service.unloadIdleTabs({ automatic: true }), 1);
+  assert.equal(f.discarded[0].t, old);
+  assert.deepEqual(f.win.gZenWorkspaces.allStoredTabs, [f.tab, protectedTab, old]);
+});
+
+test("a candidate becoming active while an older tab flushes stays loaded", async () => {
+  const f = fixture();
+  const old = { ...f.tab, lastAccessed: Date.now() - 180 * 60000 };
+  f.win.gZenWorkspaces.allStoredTabs = [f.tab, old];
+  f.win.gBrowser.prepareDiscardBrowser = async tab => {
+    if (tab === old) f.tab.selected = true;
+  };
+  assert.equal(await f.service.unloadIdleTabs(), 1);
+  assert.equal(f.discarded[0].t, old);
+});
+
+test("native audio-icon grace protects a recently audible tab", async () => {
+  const f = fixture();
+  // Firefox retains soundplaying during its scheduled-removal grace period.
+  f.tab.soundPlaying = true;
+  f.tab.attributes.add("soundplaying-scheduledremoval");
   assert.equal(await f.service.unloadIdleTabs(), 0);
   assert.equal(f.discarded.length, 0);
 });

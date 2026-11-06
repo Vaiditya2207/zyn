@@ -59,8 +59,15 @@ The new `ZynIdleTabs.mjs` snapshots tab membership, flushes each eligible tab's
 session state with `prepareDiscardBrowser`, then rechecks live state, window ownership and document
 identity before calling `discardBrowser(tab, false)`. It skips selected,
 Essential, pending, closing, disconnected, busy, empty, undiscardable, audible,
-PiP, sharing, active peer-connection and visible split/Zen-active tabs. Eligibility
-uses Firefox's `lastAccessed` timestamp, not browsing history or URL heuristics.
+PiP, sharing, active peer-connection and visible split/Zen-active tabs. Eligible HTTP(S) tabs are ordered by Firefox's `lastAccessed` timestamp, oldest
+first, so automatic mode does not simply choose the first tab in sidebar order.
+Scheme/hostname guards keep `web.whatsapp.com`, `localhost`, its subdomains,
+IPv4 loopback (127/8) and IPv6 loopback (`::1`) loaded on every port. Missing,
+unparseable and non-HTTP(S) locations are also left alone, including extension
+home pages. Checks run before and after the session-state flush. URL parsing
+is local and transient; no URLs, queries, page contents or history are retained.
+These protections apply to this personal command/timer, not Firefox's separate
+low-memory unloader or explicit native unload commands.
 
 All tabs reporting a `beforeunload` handler are conservatively skipped. This is
 stricter than skipping only handlers that would prompt; it avoids Firefox's
@@ -155,3 +162,49 @@ transport is HTTP rather than the required local stdio, and the inherited key is
 absent. No substitute log service or credential retrieval was used. Pending unsaved
 summary: this branch's source changes/checks and remaining parent build/runtime
 verification, as documented here. No push, PR, deployment or installed-app change.
+
+
+## Safer idle-session selection follow-up
+
+`src/zen/common/modules/ZynIdleTabs.mjs:82` avoids unnecessary session-state
+flushes and destructive unload/reconnect cycles for silent messaging and local
+development pages. Neither WebRTC nor beforeunload is guaranteed for a websocket
+session. The supplied usage report includes WhatsApp and 127.0.0.1 among nine
+open tabs. Canonical hostname matching covers case, trailing dots and abbreviated
+IPv4; path/query/user-info text and lookalike suffixes do not trigger protection.
+No DNS lookup, localhost probing or page execution is introduced.
+
+`ZynIdleTabs.mjs:126` sorts eligible candidates oldest first and rechecks them
+live at both sides of each async flush. It preserves the source tab collection,
+60-minute default, opt-in timer and one-discard limit. This is an inexpensive LRU
+policy, not a claim to identify the heaviest tab. Firefox's native memory estimate
+uses `ChromeUtils.requestProcInfo()` and browsing-context/process mapping
+(`engine/browser/components/tabbrowser/TabUnloader.sys.mjs:141`, `:448`); its own
+small-tab-set threshold is 10 (`:21`) and primary sort uses recency (`:274`).
+That extra sampling is not justified for this nine-tab workload.
+
+Recently audible tabs retain the existing native `soundPlaying` guard:
+`engine/browser/components/tabbrowser/content/tab.mjs:960` derives audibility
+from the MediaController and keeps the flag until its removal timer fires
+(`:1013`). This patch adds a regression test for that grace state; it does not
+introduce a new audio timeout. Paused media can still unload after the native
+grace expires. Existing PiP, WebRTC, beforeunload, split-view, document identity,
+window ownership and native non-forced-discard checks remain in place.
+
+Verified: 59 Node checks passed (25 added), both changed MJS files pass
+`node --check`, the real YAML generator check passes and `git diff --check`
+passes. Before implementation, the expanded idle suite had 17 expected failures
+for missing protections/order; after implementation all 58 idle tests pass.
+The broader npm test entry point needs an imported/built engine and is not run.
+Run the existing `zen/tests/tabs/browser_zyn_idle_tabs.js` mochitest later, plus
+candidate checks for loopback/WhatsApp retention, native audio grace, PiP, splits,
+restoration and automatic oldest-first selection using disposable test pages.
+No real account or browser was exercised. No memory/latency benefit is measured.
+Rebuild cost: **build:ui** after normal import; runtime/release readiness remains
+unverified. Temporal is not involved.
+
+Limit: protected sessions deliberately retain their memory; aliases resolving to
+loopback and arbitrary remote consoles are not detected. Silent remote apps can
+still have unsaved work without a beforeunload handler. Automatic mode stays off.
+Local Workspace logging remains blocked (no exposed tools/inherited auth); the
+source/test/commit summary and later candidate checks have not been saved there.
