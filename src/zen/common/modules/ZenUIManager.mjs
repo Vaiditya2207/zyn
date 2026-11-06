@@ -233,7 +233,9 @@ class nsZenUIManager {
 
   onFloatingURLBarOpen() {
     requestAnimationFrame(() => {
-      this.updateTabsToolbar();
+      // Opening the overlay changes geometry, not tab membership. Use the
+      // resize path to avoid rebuilding spaces and reformatting active input.
+      this.updateTabsToolbar(true);
     });
   }
 
