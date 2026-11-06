@@ -35,6 +35,12 @@ export class nsZenUrlbarController {
       "zen.urlbar.show-domain-only-in-sidebar",
       true
     );
+    XPCOMUtils.defineLazyPreferenceGetter(
+      this,
+      "openOnNewTabPage",
+      "zen.urlbar.open-on-new-tab-page",
+      false
+    );
   }
 
   init() {
@@ -110,6 +116,14 @@ export class nsZenUrlbarController {
         where === "tab");
 
     if (!shouldOpenURLBar) {
+      if (
+        this.openOnNewTabPage &&
+        !werePassedURL &&
+        !searchClipboard &&
+        where === "tab"
+      ) {
+        this.#openOnNextNewTab();
+      }
       return false;
     }
 
@@ -160,6 +174,30 @@ export class nsZenUrlbarController {
       return false;
     }
     return true;
+  }
+
+  /**
+   * Opens the floating URL bar on the new tab page that Firefox is about to
+   * open. Called from handleNewTab just before the tab is created, so the
+   * work waits until the new tab is selected.
+   */
+  #openOnNextNewTab() {
+    const opener = gBrowser.selectedTab;
+    requestAnimationFrame(() => {
+      const tab = gBrowser.selectedTab;
+      if (!tab || tab === opener || tab.closing || window.closed) {
+        return;
+      }
+      try {
+        gURLBar.focus();
+        gURLBar.select();
+        // A "command" event makes the view open for an empty input, the same
+        // way it does when the URL bar is opened from the toolbar.
+        gURLBar.view.autoOpen({ event: new CustomEvent("command") });
+      } catch (e) {
+        console.error("Error opening the URL bar on the new tab page:", e);
+      }
+    });
   }
 
   /**

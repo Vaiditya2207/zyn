@@ -5,6 +5,11 @@
 - name: zen.urlbar.replace-newtab
   value: true
 
+# When replace-newtab is off, open the floating URL bar on top of every new
+# tab page (Cmd+T, the new tab button), instead of only focusing it.
+- name: zen.urlbar.open-on-new-tab-page
+  value: false
+
 - name: zen.urlbar.show-protections-icon
   value: false
 
