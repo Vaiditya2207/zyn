@@ -43,7 +43,7 @@
     background: light-dark(rgb(233 233 233 / 80%), rgb(19 19 19 / 80%));
     /* Generic backgrounds otherwise follow the window's scheme directly. */
     color-scheme: inherit;
-    backdrop-filter: blur(42px) !important;
+    backdrop-filter: blur(var(--zyn-acrylic-blur-radius, 42px)) !important;
   }
 }
 

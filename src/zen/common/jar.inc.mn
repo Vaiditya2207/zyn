@@ -38,3 +38,5 @@
         content/browser/zen-styles/zen-panels/dialog.css                        (../../zen/common/styles/zen-panels/dialog.css)
 
         content/browser/zen-components/ZynIdleTabs.mjs                           (../../zen/common/modules/ZynIdleTabs.mjs)
+
+        content/browser/zen-styles/zyn-glass.css                               (../../zen/common/styles/zyn-glass.css)

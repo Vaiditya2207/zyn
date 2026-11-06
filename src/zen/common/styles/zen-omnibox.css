@@ -286,7 +286,7 @@
 
     /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("zen.theme.acrylic-urlbar") and (not (prefers-reduced-transparency: reduce))  {
-      backdrop-filter: var(--zen-backdrop-underlay) blur(40px) !important;
+      backdrop-filter: var(--zen-backdrop-underlay) blur(var(--zyn-acrylic-blur-radius, 40px)) !important;
     }
   }
 
