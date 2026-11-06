@@ -52,6 +52,11 @@
 - name: browser.newtabpage.activity-stream.showSponsoredTopSites
   value: false
 
+# Hiding stories does not stop the Discovery Stream feed's cache preload and
+# Nimbus listener. Zen Home does not use this built-in recommendations feed.
+- name: browser.newtabpage.activity-stream.feeds.discoverystreamfeed
+  value: false
+
 # Upstream privatefox already locks most telemetry off. Repeat the desired
 # defaults here without weakening those locks; include the separate usage gate.
 - name: datareporting.policy.dataSubmissionEnabled
