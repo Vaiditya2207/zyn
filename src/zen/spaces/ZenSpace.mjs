@@ -337,8 +337,10 @@ export class nsZenWorkspace extends MozXULElement {
   set active(value) {
     if (value) {
       this.setAttribute("active", "true");
+      this.#setupScrollToSelectedTab();
     } else {
       this.removeAttribute("active");
+      this.#stopScrollToSelectedTab();
     }
     this.#updateOverflow();
   }
@@ -423,6 +425,16 @@ export class nsZenWorkspace extends MozXULElement {
   }
 
   #setupScrollToSelectedTab() {
+    // Inactive spaces cannot offer the hint. The manager may also activate a
+    // space before connecting its markup, so wait until its scrollbox exists.
+    if (
+      !this.active ||
+      !this.isConnected ||
+      !this.scrollbox ||
+      this.#scrollToTabListeners
+    ) {
+      return;
+    }
     this.#scrollToTabListeners = new AbortController();
     const { signal } = this.#scrollToTabListeners;
 
@@ -437,10 +449,16 @@ export class nsZenWorkspace extends MozXULElement {
       { signal }
     );
 
-    this.#tabVisibilityObserver = new IntersectionObserver(
-      entries => this.#onSelectedTabVisibility(entries.at(-1)),
+    const observer = new IntersectionObserver(
+      entries => {
+        // A queued callback can outlive deactivation and even reactivation.
+        if (this.#tabVisibilityObserver === observer) {
+          this.#onSelectedTabVisibility(entries.at(-1));
+        }
+      },
       { root: this.scrollbox, threshold: 0 }
     );
+    this.#tabVisibilityObserver = observer;
 
     const follow = () => this.#watchSelectedTab();
     gBrowser.tabContainer.addEventListener("TabSelect", follow, { signal });
@@ -451,11 +469,22 @@ export class nsZenWorkspace extends MozXULElement {
   }
 
   disconnectedCallback() {
-    this.#scrollToTabListeners?.abort();
+    this.#stopScrollToSelectedTab();
+  }
+
+  #stopScrollToSelectedTab() {
+    if (!this.#scrollToTabListeners) {
+      return;
+    }
+    this.#scrollToTabListeners.abort();
     this.#scrollToTabListeners = null;
     this.#tabVisibilityObserver?.disconnect();
     this.#tabVisibilityObserver = null;
     this.#watchedTab = null;
+    // Hide immediately offscreen and invalidate any pending hide completion.
+    this.#scrollToTabSeq++;
+    this.#scrollToTabShown = false;
+    this.#scrollToTabButton.hidden = true;
   }
 
   /** Points the observer at whichever tab this space currently has selected. */
