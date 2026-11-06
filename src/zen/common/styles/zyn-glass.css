@@ -1,0 +1,44 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Reuse Zen's existing background surfaces, never blur each tab or control. */
+@media -moz-pref("zyn.theme.enabled") {
+  :root[windowtype="navigator:browser"] {
+    --zyn-acrylic-blur-radius: 20px;
+
+    @media -moz-pref("zyn.theme.blur-radius", 12) {
+      --zyn-acrylic-blur-radius: 12px;
+    }
+
+    @media -moz-pref("zyn.theme.blur-radius", 40) {
+      --zyn-acrylic-blur-radius: 40px;
+    }
+
+    /* Keep a little glass with reduced motion, without forcing site prefs. */
+    @media (prefers-reduced-motion: reduce) {
+      --zyn-acrylic-blur-radius: 12px;
+    }
+  }
+
+  /* Static accents only: preserve text, focus outlines, sizes and hit targets. */
+  @media not (forced-colors: active) {
+    #tabbrowser-tabs .tabbrowser-tab[visuallyselected]:not([multiselected="true"]) > .tab-stack > .tab-background {
+      background-image: linear-gradient(115deg, rgb(143 107 255 / 14%), rgb(255 138 91 / 8%));
+    }
+
+    #urlbar[breakout-extend][zen-floating-urlbar="true"] .urlbar-background {
+      background-image: linear-gradient(115deg, rgb(143 107 255 / 6%), rgb(255 138 91 / 4%));
+    }
+  }
+
+  /* A real zero-filter path, including the URL bar's SVG underlay. Normal
+   * reduced-transparency and acrylic-off behavior remains owned by Zen. */
+  @media -moz-pref("zyn.theme.low-power") or -moz-pref("zyn.theme.blur-radius", 0) {
+    :is(#navigator-toolbox, .zen-library-space) .zen-toolbar-background:not(:-moz-window-inactive),
+    #urlbar[breakout-extend] .urlbar-background {
+      backdrop-filter: none !important;
+      background-color: light-dark(rgb(233 233 233), rgb(19 19 19)) !important;
+    }
+  }
+}

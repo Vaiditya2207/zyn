@@ -38,6 +38,9 @@ with tempfile.TemporaryDirectory(prefix="zyn-prefs-", dir=TARGET) as directory:
     for name, value in re.findall(r'pref\("([^"]+)", (.*?)(?:, locked|, sticky)?\);', generated):
         values[name] = value
     required = {
+        "zyn.theme.enabled": True,
+        "zyn.theme.blur-radius": 20,
+        "zyn.theme.low-power": False,
         "zen.urlbar.open-on-new-tab-page": True,
         "zen.urlbar.replace-newtab": False,
         "zen.urlbar.behavior": "float",

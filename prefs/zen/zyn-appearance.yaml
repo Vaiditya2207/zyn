@@ -1,0 +1,10 @@
+# Dynamic chrome-only defaults; existing user preferences still win.
+- name: zyn.theme.enabled
+  value: true
+# Supported radii: 12, 20 (default), 40. Zero selects the opaque fallback.
+# Other values fall back to 20; CSS intentionally needs no observer or timer.
+- name: zyn.theme.blur-radius
+  value: 20
+# Manual battery/low-power choice; does not claim to detect macOS power mode.
+- name: zyn.theme.low-power
+  value: false
