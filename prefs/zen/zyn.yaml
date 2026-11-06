@@ -1,0 +1,121 @@
+# Personal Zyn defaults. ffprefs explicitly emits this file LAST into zen.js,
+# which is included at the end of Firefox's firefox.js. These are defaults,
+# not user-pref migrations; existing profile values can still override them.
+# Keep this overlay dynamic, including overrides of upstream static defaults.
+
+- name: zen.urlbar.open-on-new-tab-page
+  value: true
+- name: zen.urlbar.replace-newtab
+  value: false
+- name: zen.urlbar.behavior
+  value: float
+- name: zen.theme.acrylic-sidebar
+  value: true
+- name: zen.theme.acrylic-urlbar
+  value: true
+- name: zen.watermark.enabled
+  value: false
+- name: zen.theme.styled-status-panel
+  value: true
+- name: browser.ctrlTab.sortByRecentlyUsed
+  value: true
+- name: zen.tabs.ctrl-tab.ignore-pending-tabs
+  value: true
+- name: browser.startup.page
+  value: 3
+- name: zen.workspaces.continue-where-left-off
+  value: true
+- name: zen.workspaces.natural-scroll
+  value: true
+- name: findbar.highlightAll
+  value: true
+- name: browser.urlbar.suggest.calculator
+  value: true
+- name: browser.urlbar.unitConversion.enabled
+  value: true
+- name: privacy.query_stripping.enabled
+  value: true
+- name: privacy.query_stripping.enabled.pbmode
+  value: true
+- name: network.IDN_show_punycode
+  value: true
+- name: pdfjs.enableScripting
+  value: false
+- name: browser.urlbar.suggest.quicksuggest.sponsored
+  value: false
+- name: browser.urlbar.suggest.quicksuggest.nonsponsored
+  value: false
+- name: zen.urlbar.show-sponsored
+  value: false
+- name: browser.newtabpage.activity-stream.showSponsored
+  value: false
+- name: browser.newtabpage.activity-stream.showSponsoredTopSites
+  value: false
+
+# Upstream privatefox already locks most telemetry off. Repeat the desired
+# defaults here without weakening those locks; include the separate usage gate.
+- name: datareporting.policy.dataSubmissionEnabled
+  value: false
+- name: datareporting.healthreport.uploadEnabled
+  value: false
+- name: datareporting.usage.uploadEnabled
+  value: false
+- name: toolkit.telemetry.enabled
+  value: false
+- name: toolkit.telemetry.unified
+  value: false
+- name: toolkit.telemetry.archive.enabled
+  value: false
+- name: toolkit.telemetry.newProfilePing.enabled
+  value: false
+- name: toolkit.telemetry.shutdownPingSender.enabled
+  value: false
+- name: toolkit.telemetry.updatePing.enabled
+  value: false
+- name: toolkit.telemetry.bhrPing.enabled
+  value: false
+- name: toolkit.telemetry.firstShutdownPing.enabled
+  value: false
+- name: browser.newtabpage.activity-stream.feeds.telemetry
+  value: false
+- name: browser.newtabpage.activity-stream.telemetry
+  value: false
+- name: browser.ping-centre.telemetry
+  value: false
+- name: app.normandy.enabled
+  value: false
+- name: app.normandy.api_url
+  value: ""
+- name: app.shield.optoutstudies.enabled
+  value: false
+- name: nimbus.rollouts.enabled
+  value: false
+- name: nimbus.telemetry.targetingContextEnabled
+  value: false
+
+# macOS pressure response is separate from the tab-unloader gate.
+- name: browser.tabs.unloadOnLowMemory
+  value: true
+- name: browser.lowMemoryResponseMask
+  value: 3
+- name: browser.lowMemoryResponseOnWarn
+  value: true
+- name: browser.sessionstore.interval
+  value: 60000
+- name: network.http.http2.enabled
+  value: true
+- name: network.http.http2.coalesce-hostnames
+  value: false
+- name: toolkit.legacyUserProfileCustomizations.stylesheets
+  value: true
+- name: xpinstall.signatures.required
+  value: false
+
+# Manual command by default. Automatic mode discards at most one tab per minute.
+- name: zyn.tabs.unload-idle-minutes
+  value: 60
+- name: zyn.tabs.auto-unload-idle
+  value: false
+
+# No cache, process-count, media-buffer or connection-size overrides: Firefox
+# supplies those defaults. Old user.js/prefs.js overrides require a separate reset.
