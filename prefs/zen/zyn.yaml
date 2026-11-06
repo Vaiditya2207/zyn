@@ -122,5 +122,12 @@
 - name: zyn.tabs.auto-unload-idle
   value: false
 
-# No cache, process-count, media-buffer or connection-size overrides: Firefox
-# supplies those defaults. Old user.js/prefs.js overrides require a separate reset.
+# Keep one warm content process for the small daily tab set, rather than the
+# desktop Fission default of three. Prelaunch stays enabled; this only reduces
+# the spare queue, not active site pools or isolation. Bursts may start cold.
+# See docs/zyn-memory-defaults.md for source evidence and tradeoffs.
+- name: dom.ipc.processPrelaunch.fission.number
+  value: 1
+
+# Keep active process-count, cache, media-buffer and connection-size defaults.
+# Old user.js/prefs.js overrides require a separate reset.
