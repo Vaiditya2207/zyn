@@ -464,7 +464,10 @@ export class nsZenWorkspace extends MozXULElement {
       return;
     }
     const selected = gBrowser.selectedTab;
-    const tab = this.#canOfferScrollToTab(selected) ? selected : null;
+    // A fitting strip cannot offer the hint. Overflow/underflow events call
+    // this again, so observation resumes as soon as scrolling is possible.
+    const tab =
+      this.overflows && this.#canOfferScrollToTab(selected) ? selected : null;
 
     if (this.#watchedTab && this.#watchedTab !== tab) {
       this.#tabVisibilityObserver.unobserve(this.#watchedTab);
@@ -565,10 +568,10 @@ export class nsZenWorkspace extends MozXULElement {
 
   /** Takes the pill back into the edge it came from. */
   #hideScrollToTab() {
-    const button = this.#scrollToTabButton;
     if (!this.#scrollToTabShown) {
       return;
     }
+    const button = this.#scrollToTabButton;
     this.#scrollToTabShown = false;
     const seq = ++this.#scrollToTabSeq;
 
