@@ -44,6 +44,7 @@ with tempfile.TemporaryDirectory(prefix="zyn-prefs-", dir=TARGET) as directory:
         "zen.theme.acrylic-sidebar": True,
         "zen.theme.acrylic-urlbar": True,
         "browser.sessionstore.interval": 60000,
+        "dom.ipc.processPrelaunch.fission.number": 1,
         "browser.lowMemoryResponseMask": 3,
         "browser.lowMemoryResponseOnWarn": True,
         "network.http.http2.coalesce-hostnames": False,
