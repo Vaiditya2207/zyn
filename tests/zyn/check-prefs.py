@@ -50,6 +50,7 @@ with tempfile.TemporaryDirectory(prefix="zyn-prefs-", dir=TARGET) as directory:
         "xpinstall.signatures.required": False,
         "datareporting.usage.uploadEnabled": False,
         "nimbus.rollouts.enabled": False,
+        "browser.newtabpage.activity-stream.feeds.discoverystreamfeed": False,
         "zyn.tabs.auto-unload-idle": False,
         "zyn.tabs.unload-idle-minutes": 60,
     }
