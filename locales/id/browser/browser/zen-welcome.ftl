@@ -1,0 +1,28 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+zen-welcome-title-line1 = Selamat datang di
+zen-welcome-title-line2 = internet yang lebih tenang
+zen-welcome-back = Kembali
+zen-welcome-skip = Lewati untuk sekarang
+zen-welcome-import-title = Permulaan baru, Bookmark tetap sama
+zen-welcome-import-description = Pick a browser to import your bookmarks, history and passwords from and pick up right where you left off.
+zen-welcome-import-no = <strong>NO</strong>, start fresh.
+zen-welcome-default-browser-title = Make { -brand-short-name } your default?
+zen-welcome-default-browser-description = Links from other apps will open in { -brand-short-name }. You can always change this later.
+zen-welcome-set-default-browser = <strong>YES</strong>, make { -brand-short-name } default.
+zen-welcome-dont-set-default-browser = <strong>NO</strong>, still exploring my options.
+zen-welcome-default-search-title = Mesin Pencari Default Anda
+zen-welcome-default-search-description = Pilih mesin pencari default Anda. Anda selalu dapat mengubahnya nanti!
+zen-welcome-essentials-title = Choose the apps you use most.
+zen-welcome-essentials-description = Select your favorite apps to keep them handy in your sidebar.
+zen-welcome-block-ads-title = Block ads and trackers?
+zen-welcome-block-ads-description = { -brand-short-name } can install uBlock Origin for you, so pages load cleaner and faster. You can remove it any time.
+zen-welcome-block-ads-yes = <strong>YES</strong>, block ads for me.
+zen-welcome-block-ads-no = <strong>NO</strong>, show me everything.
+zen-welcome-workspace-colors-title = Ruang Kerja Anda, Warna Anda
+zen-welcome-workspace-colors-description = Atur peramban anda dengan memberikan warna tersendiri tiap ruang kerja.
+zen-welcome-start-browsing-title = All set? Let’s get rolling!
+zen-welcome-start-browsing-description-1 = Anda selesai melakukan pengaturan dan siap untuk mulai. Klik tombol di bawah ini untuk mulai menjelajah dengan { -brand-short-name }.
+zen-welcome-start-browsing = Ayo, mulai!
